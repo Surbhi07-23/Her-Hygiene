@@ -280,7 +280,6 @@ const Dashboard = () => {
                 {" "}
                 {localStorage.getItem("name") || "User"}
                 {" "}
-                👋
 
             </h1>
 
