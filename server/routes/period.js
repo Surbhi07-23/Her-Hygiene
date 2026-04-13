@@ -1,7 +1,7 @@
 const router = require("express").Router();
 const Period = require("../models/Period.js");
 const auth = require("../middleware/auth.js");
-const calculateCycleLength = require("../utils/cycle.js");
+const {calculateCycleLength , predictNextPeriod} = require("../utils/cycle.js");
 
 //add Period  -- POST method
 router.post("/" , auth , async(req , res) => {     //auth middleware runs first -> verifies token -> adds req.user
@@ -96,7 +96,7 @@ router.put("/:id" , auth , async(req,res) => {
     }
 })
 
-//STATS endpoint to calculate cycle length
+//STATS endpoint to calculate cycle length and predict next period
 router.get("/stats" , auth , async(req , res) => {
     try{
         const periods = await Period.find({              //all entries of a specific user
@@ -105,12 +105,16 @@ router.get("/stats" , auth , async(req , res) => {
 
         const cycleLength = calculateCycleLength(periods);
 
+        const nextPeriod = predictNextPeriod(periods);
+
         res.json({
             cycleLength ,
+            nextPeriod,
             totalEntries : periods.length
         });
     }
     catch(error){
+        console.log(error)
         res.status(500).json(error.message);
     }
 })
