@@ -26,6 +26,9 @@ const periodSchema = new mongoose.Schema({
     notes : {
         type : String ,
         default : ""                                         //notes = "Heavy flow on day 2"   only one value
+    },
+    duration :{
+        type : "Number"
     }
 },
     {timestamps : true}

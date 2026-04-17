@@ -26,7 +26,7 @@ router.post("/register" , async(req , res) => {
         });
 
         await user.save();      //This stores user in users collection
-
+        
         res.status(201).json({
             message : "User registered successfully"  ,  //200 =  user created
             user : {
