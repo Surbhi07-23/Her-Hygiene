@@ -7,77 +7,77 @@ const NearbyStores = () => {
 
   const getStores = () => {
 
-  if (!navigator.geolocation) {
+    if (!navigator.geolocation) {
 
-    alert("Geolocation not supported");
-    return;
-  }
+      alert("Geolocation not supported");
+      return;
+    }
 
-  setLoading(true);
+    setLoading(true);
 
-  navigator.geolocation.getCurrentPosition(
+    navigator.geolocation.getCurrentPosition(
 
-    async (position) => {
+      async (position) => {
 
-      try {
+        try {
 
-        const lat = position.coords.latitude;
-        const lon = position.coords.longitude;
+          const lat = position.coords.latitude;
+          const lon = position.coords.longitude;
 
-        // OVERPASS QUERY
-        const query = `
-          [out:json];
-          node["amenity"="pharmacy"](around:5000, ${lat}, ${lon});
-          out;
-        `;
+          const response = await fetch(
+            "https://her-hygiene.onrender.com/api/stores",
+            {
+              method: "POST",
 
-        const response = await fetch(
-          "https://overpass-api.de/api/interpreter",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "text/plain"
-            },
-            body: query
+              headers: {
+                "Content-Type": "application/json"
+              },
+
+              body: JSON.stringify({
+                lat,
+                lon
+              })
+            }
+          );
+
+          if (!response.ok) {
+
+            throw new Error("Failed request");
+
           }
-        );
 
-        if (!response.ok) {
-          throw new Error("Failed request");
+          const data = await response.json();
+
+          console.log(data);
+
+          setStores(data.elements || []);
+
+        } catch (error) {
+
+          console.log(error);
+
+          alert(
+            "Unable to fetch nearby stores right now."
+          );
+
         }
 
-        const data = await response.json();
+        setLoading(false);
 
-        console.log(data);
+      },
 
-        setStores(data.elements || []);
-
-      } catch (error) {
+      (error) => {
 
         console.log(error);
 
-        alert(
-          "Unable to fetch nearby stores right now."
-        );
+        alert("Please allow location access");
+
+        setLoading(false);
 
       }
 
-      setLoading(false);
-
-    },
-
-    (error) => {
-
-      console.log(error);
-
-      alert("Please allow location access");
-
-      setLoading(false);
-
-    }
-
-  );
-};
+    );
+  };
 
   return (
 
@@ -121,17 +121,22 @@ const NearbyStores = () => {
 
           <div
             key={index}
-            className="bg-white border rounded-xl p-5 shadow-sm hover:shadow-md transition"
+            className="bg-white border border-pink-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition"
           >
 
             {/* STORE NAME */}
             <h2 className="font-semibold text-lg text-gray-800 mb-2">
+
               {store.tags?.name || "Medical Store"}
+
             </h2>
 
             {/* ADDRESS */}
             <p className="text-gray-500 text-sm mb-4">
-              {store.tags?.["addr:street"] || "Nearby Pharmacy"}
+
+              {store.tags?.["addr:street"] ||
+                "Nearby Pharmacy"}
+
             </p>
 
             {/* MAP LINK */}
