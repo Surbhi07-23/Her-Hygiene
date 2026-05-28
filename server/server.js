@@ -24,6 +24,7 @@ app.get("/api/protected" , auth , (req,res) => {
         user : req.user
     });
 });
+
 app.use("/api/stores", storeRoutes);
 
 app.use("/api/period" , require("./routes/period.js"));
