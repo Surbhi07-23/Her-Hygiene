@@ -5,7 +5,7 @@ const NearbyStores = () => {
   const [stores, setStores] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const getStores = () => {
+  const getStores = async () => {
 
     if (!navigator.geolocation) {
 
@@ -40,25 +40,15 @@ const NearbyStores = () => {
             }
           );
 
-          if (!response.ok) {
-
-            throw new Error("Failed request");
-
-          }
-
           const data = await response.json();
-
-          console.log(data);
 
           setStores(data.elements || []);
 
-        } catch (error) {
+        } catch (err) {
 
-          console.log(error);
+          console.log(err);
 
-          alert(
-            "Unable to fetch nearby stores right now."
-          );
+          alert("Failed to fetch stores");
 
         }
 
@@ -66,9 +56,7 @@ const NearbyStores = () => {
 
       },
 
-      (error) => {
-
-        console.log(error);
+      () => {
 
         alert("Please allow location access");
 
@@ -83,55 +71,52 @@ const NearbyStores = () => {
 
     <div className="min-h-screen bg-rose-50 p-6">
 
-      {/* HEADER */}
       <h1 className="text-3xl font-bold text-rose-500 mb-2">
+
         Nearby Medical Stores
+
       </h1>
 
       <p className="text-gray-500 mb-6">
-        Find pharmacies and medical stores near you
+
+        Find pharmacies near you
+
       </p>
 
-      {/* BUTTON */}
       <button
         onClick={getStores}
-        className="bg-rose-500 text-white px-5 py-3 rounded-lg mb-8 hover:bg-rose-600 transition"
+        className="bg-rose-500 text-white px-5 py-3 rounded-xl hover:bg-rose-600 transition"
       >
+
         Find Nearby Stores
+
       </button>
 
-      {/* LOADING */}
       {loading && (
-        <p className="text-gray-500">
+
+        <p className="mt-5 text-gray-500">
+
           Searching nearby pharmacies...
+
         </p>
+
       )}
 
-      {/* EMPTY */}
-      {!loading && stores.length === 0 && (
-        <p className="text-gray-400">
-          No stores found yet
-        </p>
-      )}
-
-      {/* STORES */}
-      <div className="grid md:grid-cols-2 gap-5">
+      <div className="grid md:grid-cols-2 gap-5 mt-8">
 
         {stores.map((store, index) => (
 
           <div
             key={index}
-            className="bg-white border border-pink-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition"
+            className="bg-white rounded-2xl border border-pink-100 p-5 shadow-sm"
           >
 
-            {/* STORE NAME */}
             <h2 className="font-semibold text-lg text-gray-800 mb-2">
 
               {store.tags?.name || "Medical Store"}
 
             </h2>
 
-            {/* ADDRESS */}
             <p className="text-gray-500 text-sm mb-4">
 
               {store.tags?.["addr:street"] ||
@@ -139,14 +124,15 @@ const NearbyStores = () => {
 
             </p>
 
-            {/* MAP LINK */}
             <a
               href={`https://www.google.com/maps?q=${store.lat},${store.lon}`}
               target="_blank"
               rel="noreferrer"
-              className="text-rose-500 font-medium text-sm"
+              className="text-rose-500 font-medium"
             >
+
               Open in Maps →
+
             </a>
 
           </div>
