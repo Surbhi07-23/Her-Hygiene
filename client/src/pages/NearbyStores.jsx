@@ -7,119 +7,135 @@ const NearbyStores = () => {
 
   const getStores = () => {
 
-  if (!navigator.geolocation) {
-    alert("Geolocation not supported");
-    return;
-  }
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported");
+      return;
+    }
 
-  setLoading(true);
+    setLoading(true);
 
-  navigator.geolocation.getCurrentPosition(
-    async (pos) => {
+    navigator.geolocation.getCurrentPosition(
 
-      try {
-        const lat = pos.coords.latitude;
-        const lon = pos.coords.longitude;
+      async (position) => {
 
-        const query = 
-        `[out:json];
-          node["amenity"="pharmacy"](around:3000, ${lat}, ${lon});
-          out;`;
-        const res = await fetch(
-          "https://overpass.kumi.systems/api/interpreter",
-          {
-            method: "POST",
-            body: query,
-            headers: {
-              "Content-Type": "text/plain"
+        try {
+
+          const lat = position.coords.latitude;
+          const lon = position.coords.longitude;
+
+          console.log(lat, lon);
+
+          // Overpass API Query
+          const query = `
+            [out:json];
+            node["amenity"="pharmacy"](around:5000, ${lat}, ${lon});
+            out;
+          `;
+
+          const res = await fetch(
+            "https://overpass-api.de/api/interpreter",
+            {
+              method: "POST",
+              body: query
             }
-          }
-        );
+          );
 
-        //  check response
-        if (!res.ok) {
-          throw new Error("API failed");
+          const data = await res.json();
+
+          console.log(data);
+
+          setStores(data.elements || []);
+
+        } catch (err) {
+
+          console.log(err);
+          alert("Failed to fetch nearby stores");
+
         }
 
-        const data = await res.json();
+        setLoading(false);
+      },
 
-        console.log("Stores:", data);
+      (error) => {
 
-        setStores(data.elements || []);
+        console.log(error);
 
-      } catch (err) {
-        console.log("ERROR:", err);
-        alert("Failed to fetch stores");
+        alert("Please allow location access");
+
+        setLoading(false);
       }
 
-      //  ALWAYS stop loading
-      setLoading(false);
-    },
-
-    (error) => {
-      console.log("Geo error:", error);
-      alert("Location permission denied");
-      setLoading(false);
-    }
-  );
-};
+    );
+  };
 
   return (
+
     <div className="min-h-screen bg-rose-50 p-6">
 
-      <h1 className="text-2xl font-bold text-rose-500 mb-4">
+      {/* HEADER */}
+      <h1 className="text-3xl font-bold text-rose-500 mb-2">
         Nearby Medical Stores
       </h1>
 
+      <p className="text-gray-500 mb-6">
+        Find pharmacies and medical stores near you
+      </p>
+
+      {/* BUTTON */}
       <button
         onClick={getStores}
-        className="bg-rose-500 text-white px-4 py-2 rounded mb-6"
+        className="bg-rose-500 text-white px-5 py-3 rounded-lg mb-8 hover:bg-rose-600 transition"
       >
         Find Nearby Stores
       </button>
 
-      {loading && <p>Loading...</p>}
-
-      {!loading && stores.length === 0 && (
-        <p className="text-gray-400">
-          Click the button to find nearby pharmacies
+      {/* LOADING */}
+      {loading && (
+        <p className="text-gray-500">
+          Searching nearby pharmacies...
         </p>
       )}
 
-      <div className="grid md:grid-cols-2 gap-4">
+      {/* EMPTY */}
+      {!loading && stores.length === 0 && (
+        <p className="text-gray-400">
+          No stores found yet
+        </p>
+      )}
 
-        {stores.map((store, i) => {
+      {/* STORES */}
+      <div className="grid md:grid-cols-2 gap-5">
 
-          const name = store.tags?.name || "Unnamed Pharmacy";
-          const lat = store.lat;
-          const lon = store.lon;
+        {stores.map((store, index) => (
 
-          return (
-            <div
-              key={i}
-              className="bg-white p-4 rounded-xl border shadow-sm"
+          <div
+            key={index}
+            className="bg-white border rounded-xl p-5 shadow-sm hover:shadow-md transition"
+          >
+
+            {/* STORE NAME */}
+            <h2 className="font-semibold text-lg text-gray-800 mb-2">
+              {store.tags?.name || "Medical Store"}
+            </h2>
+
+            {/* ADDRESS */}
+            <p className="text-gray-500 text-sm mb-4">
+              {store.tags?.["addr:street"] || "Nearby Pharmacy"}
+            </p>
+
+            {/* MAP LINK */}
+            <a
+              href={`https://www.google.com/maps?q=${store.lat},${store.lon}`}
+              target="_blank"
+              rel="noreferrer"
+              className="text-rose-500 font-medium text-sm"
             >
+              Open in Maps →
+            </a>
 
-              <h2 className="font-semibold text-gray-800">
-                {name}
-              </h2>
+          </div>
 
-              <p className="text-sm text-gray-500 mb-2">
-                Pharmacy
-              </p>
-
-              <a
-                href={`https://www.google.com/maps?q=${lat},${lon}`}
-                target="_blank"
-                rel="noreferrer"
-                className="text-rose-500 text-sm"
-              >
-                View on Maps →
-              </a>
-
-            </div>
-          );
-        })}
+        ))}
 
       </div>
 

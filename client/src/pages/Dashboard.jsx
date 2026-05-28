@@ -1,352 +1,510 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+
 import {
   addPeriod,
-  getPeriods,
   deletePeriod,
-  updatePeriod,
-  getStats
+  getPeriods,
+  updatePeriod
 } from "../api/period";
-import { useNavigate } from "react-router-dom";
+
+import {
+  FaCalendarAlt
+} from "react-icons/fa";
+
+import {
+  IoReloadCircle
+} from "react-icons/io5";
 
 const Dashboard = () => {
 
-    const navigate = useNavigate();
+  const navigate = useNavigate();
 
-    const [form, setForm] = useState({
-        startDate: "",
-        endDate: "",
-        notes: ""
-    });
+  // ---------------- FORM ----------------
+  const [form, setForm] = useState({
+    startDate: "",
+    endDate: "",
+    notes: ""
+  });
 
-    const [periods, setPeriods] = useState([]);
-    const [stats, setStats] = useState({});
-    const [editingId, setEditingId] = useState(null);
+  // ---------------- STATES ----------------
+  const [periods, setPeriods] = useState([]);
+  const [editingId, setEditingId] = useState(null);
 
-    // ---------------- FETCH ----------------
-    const fetchData = async () => {
-        const p = await getPeriods();
-        const s = await getStats();
+  // ---------------- FETCH DATA ----------------
+  const fetchData = async () => {
 
-        setPeriods(p.data);
-        setStats(s.data);
-    };
+    try {
+
+      const res = await getPeriods();
+
+      const sorted = res.data.sort(
+        (a, b) =>
+          new Date(b.startDate) -
+          new Date(a.startDate)
+      );
+
+      setPeriods(sorted);
+
+    } catch (err) {
+
+      console.log(err);
+
+    }
+  };
 
     useEffect(() => {
         fetchData();
     }, []);
 
-    // ---------------- HANDLERS ----------------
-    const handleChange = (e) => {
-        setForm({ ...form, [e.target.name]: e.target.value });
+  // ---------------- HANDLE CHANGE ----------------
+  const handleChange = (e) => {
+
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  // ---------------- HANDLE SUBMIT ----------------
+     const handleSubmit = async (e) => {
+
+    e.preventDefault();
+
+    try {
+
+      if (editingId) {
+
+        await updatePeriod(editingId, form);
+
+        setEditingId(null);
+
+      } else {
+
+        await addPeriod(form);
+
+      }
+
+      setForm({
+        startDate: "",
+        endDate: "",
+        notes: ""
+      });
+
+      fetchData();
+
+    } catch (err) {
+
+      console.log(err);
+
+    }
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+  // ---------------- DELETE ----------------
+     const handleDelete = async (id) => {
 
-        if (editingId) {
-        await updatePeriod(editingId, form);
-        setEditingId(null);
-        } else {
-        await addPeriod(form);
+    try {
+
+      await deletePeriod(id);
+
+      fetchData();
+
+    } catch (err) {
+
+      console.log(err);
+
+    }
+  };
+
+  // ---------------- EDIT ----------------
+    const handleEdit = (period) => {
+
+    setEditingId(period._id);
+
+    setForm({
+      startDate: period.startDate?.slice(0, 10),
+      endDate: period.endDate?.slice(0, 10),
+      notes: period.notes || ""
+    });
+  };
+
+  // ---------------- FORMAT DATE ----------------
+    const formatDate = (date) => {
+        return new Date(date).toLocaleDateString();
+    };
+
+  // ---------------- AVG CYCLE ----------------
+    let averageCycle = 28;
+
+    if (periods.length >= 2) {
+
+        let total = 0;
+
+        for (let i = 0; i < periods.length - 1; i++) {
+
+        const current =
+            new Date(periods[i].startDate);
+
+        const next =
+            new Date(periods[i + 1].startDate);
+
+        const diff =
+            Math.ceil(
+            (current - next) /
+            (1000 * 60 * 60 * 24)
+            );
+
+        total += diff;
         }
 
-        setForm({ startDate: "", endDate: "", notes: "" });
-        fetchData();
-    };
+        averageCycle =
+        Math.round(total / (periods.length - 1));
+    }
 
-    const handleDelete = async (id) => {
-        await deletePeriod(id);
-        fetchData();
-    };
+  // ---------------- NEXT PERIOD ----------------
+    let nextPeriodDate = "N/A";
 
-    const handleEdit = (p) => {
-        setForm({
-        startDate: p.startDate.split("T")[0],
-        endDate: p.endDate.split("T")[0],
-        notes: p.notes || ""
-        });
-        setEditingId(p._id);
-    };
+    if (periods.length > 0) {
 
-    const logout = () => {
-        localStorage.removeItem("token");
-        navigate("/");
-    };
+        const lastPeriod =
+        new Date(periods[0].startDate);
 
-    const formatDate = (d) =>
-        new Date(d).toLocaleDateString();
+        lastPeriod.setDate(
+        lastPeriod.getDate() + averageCycle
+        );
 
-    const nextDate = stats.nextPeriod
-    ? new Date(stats.nextPeriod)
-    : null;
+        nextPeriodDate =
+        lastPeriod.toLocaleDateString();
+    }
 
-    const currentCycleDay = periods.length > 0
-    ? Math.ceil(
-        (new Date() - new Date(periods[0].startDate)) /
-        (1000 * 60 * 60 * 24)
+  // ---------------- CURRENT CYCLE DAY ----------------
+    const currentCycleDay =
+    periods.length > 0
+      ? Math.ceil(
+          (new Date() -
+            new Date(periods[0].startDate)) /
+            (1000 * 60 * 60 * 24)
         ) + 1
-    : null;
+      : null;
 
+  // ---------------- PHASE ----------------
     let phase = "";
 
     if (currentCycleDay >= 1 && currentCycleDay <= 5) {
-    phase = "Menstrual 🩸";
-    } else if (currentCycleDay >= 6 && currentCycleDay <= 13) {
-    phase = "Follicular 🌱";
+
+        phase = "Menstrual 🩸";
+
+    } else if (
+        currentCycleDay >= 6 &&
+        currentCycleDay <= 13
+    ) {
+
+        phase = "Follicular 🌱";
+
     } else if (currentCycleDay === 14) {
-    phase = "Ovulation 🌼";
+
+        phase = "Ovulation 🌼";
+
     } else if (currentCycleDay >= 15) {
-    phase = "Luteal 🌙";
+
+        phase = "Luteal 🌙";
     }
 
-    const daysLeft = nextDate
-    ? Math.ceil((nextDate - new Date()) / (1000 * 60 * 60 * 24))
-    : null;
-
-    // ---------------- UI ----------------
-
     return (
+
     <div className="min-h-screen bg-rose-50">
 
-        {/* NAVBAR */}
-        <div className="flex justify-between items-center px-6 py-4 bg-white border-b">
+      {/* NAVBAR */}
+      <nav className="bg-white shadow-sm px-8 py-5 flex justify-between items-center">
 
-        <div className="flex items-center gap-6">
-            <h1 className="text-xl font-semibold text-rose-500">
-                HerHygiene
-            </h1>
+        <h1 className="text-3xl font-bold text-rose-500">
+          HerHygiene
+        </h1>
 
-            <div className="hidden md:flex gap-8 text-gray-600">
-                <span className="text-rose-500 font-medium">Dashboard</span>
-                <span onClick={() => navigate("/education")} className="cursor-pointer">Health Info</span>
-                <span onClick={() => navigate("/stores")} className="cursor-pointer">Stores</span>
-                <span onClick={() => navigate("/myths")} className="cursor-pointer">Myths</span>
-            </div>
-        </div>
-
-        <div className="flex items-center gap-4">
-             <div className="relative group">
-
-            {/* Avatar */}
-            <div className="w-8 h-8 bg-rose-100 text-rose-500 flex items-center justify-center rounded-full cursor-pointer">
-                {(localStorage.getItem("name") || "U")[0].toUpperCase()}
-            </div>
-
-            {/* Hover Card */}
-            <div className="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-md p-3 opacity-0 group-hover:opacity-100 transition">
-
-                <p className="text-sm font-semibold text-gray-800">
-                {localStorage.getItem("name") || "User"}
-                </p>
-
-                <p className="text-sm text-gray-500">
-                {localStorage.getItem("email") || "email@example.com"}
-                </p>
-
-            </div>
-
-            </div>
+        <div className="flex items-center gap-8">
 
           <button
-            onClick={logout}
-            className="border px-3 py-1 rounded text-gray-500"
+            onClick={() => navigate("/education")}
+            className="text-gray-700 hover:text-rose-500 transition"
           >
-            Logout
+            Health Info
           </button>
-        </div>
-      </div>
 
-        {/* MAIN CONTENT */}
-        <div className="p-6">
+          <button
+            onClick={() => navigate("/myths")}
+            className="text-gray-700 hover:text-rose-500 transition"
+          >
+            Myths
+          </button>
+
+          <button
+            onClick={() => navigate("/stores")}
+            className="text-gray-700 hover:text-rose-500 transition"
+          >
+            Stores
+          </button>
+
+          {/* PROFILE */}
+            <div className="relative group">
+
+                <div className="w-10 h-10 bg-rose-100 text-rose-500 rounded-full flex items-center justify-center font-semibold cursor-pointer">
+
+                {(localStorage.getItem("name") || "U")[0].toUpperCase()}
+
+                </div>
+
+            {/* HOVER CARD */}
+            <div className="absolute right-0 mt-2 w-56 bg-white border rounded-2xl shadow-lg p-4 opacity-0 group-hover:opacity-100 transition duration-300 z-50">
+
+              <p className="font-semibold">
+                {localStorage.getItem("name") || "User"}
+              </p>
+
+              <p className="text-sm text-gray-500">
+                {localStorage.getItem("email")}
+              </p>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </nav>
+      {/* HERO SECTION */}
+        <div className="mx-8 mt-6 rounded-3xl bg-gradient-to-r from-pink-300 via-rose-200 to-pink-100 p-12 text-center shadow-sm">
+
+            <h1 className="text-6xl font-bold text-white mb-4">
+
+                Hello,
+                {" "}
+                {localStorage.getItem("name") || "User"}
+                {" "}
+                👋
+
+            </h1>
+
+            <p className="text-white/90 text-xl font-medium">
+
+                Welcome back! Here's your menstrual cycle overview.
+
+            </p>
+
+        </div>
+
+        {/* CONTENT */}
+        <div className="p-8">
 
         {/* STATS */}
-        <div className="grid md:grid-cols-4 gap-4 mb-6">
+            <div className="grid md:grid-cols-3 gap-6 mt-8 mb-8">
 
-            <div className="bg-white rounded-xl border p-5">
-                <p className="text-gray-500 text-sm">Cycle day</p>
+          {/* CYCLE DAY */}
+            <div className="flex items-center gap-5">
 
-                <h2 className="text-3xl font-bold text-rose-500">
-                    {currentCycleDay || "N/A"}
-                </h2>
+                <div className="w-20 h-20 rounded-full bg-pink-100 flex items-center justify-center">
 
-                <p className="text-gray-400 text-sm">
-                    of ~{stats.cycleLength || 28} days
-                </p>
+                    <FaCalendarAlt className="text-pink-500 text-3xl" />
 
-                {/* NEW PHASE */}
-                <p className="text-sm text-rose-500 mt-2 font-medium">
-                    {phase}
-                </p>
-            </div>
-
-            <div className="bg-white rounded-xl border p-5">
-                <p className="text-gray-500 text-sm">Next period in</p>
-                <h2 className="text-3xl font-bold text-rose-500">
-                {daysLeft || "N/A"}
-                </h2>
-
-                <p className="text-gray-400 text-sm">
-                days • {nextDate ? nextDate.toDateString() : ""}
-                </p>
-            </div>
-
-            <div className="bg-white rounded-xl border p-5">
-                <p className="text-gray-500 text-sm">Last period</p>
-                <h2 className="text-3xl font-bold text-rose-500">
-                {periods[0]?.duration || 5}
-                </h2>
-                <p className="text-gray-400 text-sm">days</p>
-            </div>
-
-            <div className="bg-white rounded-xl border p-5">
-                <p className="text-gray-500 text-sm">Avg cycle length</p>
-                <h2 className="text-3xl font-bold text-rose-500">
-                {stats.cycleLength || 28}
-                </h2>
-                <p className="text-gray-400 text-sm">days • regular</p>
-            </div>
-        </div>
-
-        {/* PREDICTION CARD */}
-        <div className="bg-rose-100 border border-rose-200 rounded-xl p-6 mb-6 flex justify-between items-center">
-
-        <div>
-            <p className="text-sm text-rose-500">
-            Next predicted period
-            </p>
-
-            <h2 className="text-xl font-semibold text-gray-800">
-            {nextDate ? nextDate.toDateString() : "N/A"}
-            </h2>
-
-            <p className="text-gray-500 text-sm">
-            Based on your last cycles
-            </p>
-        </div>
-
-        <div className="text-right">
-            <h1 className="text-4xl font-bold text-rose-500">
-            {daysLeft || "N/A"}
-            </h1>
-            <p className="text-gray-500 text-sm">days away</p>
-        </div>
-
-        </div>
-
-        {/*  LAYOUT GRID */}
-        <div className="grid md:grid-cols-2 gap-6">
-
-          {/* LEFT SIDE → FORM */}
-          <div className="bg-white p-6 rounded-xl border">
-
-            <h2 className="text-lg font-semibold mb-4">
-              Log a period
-            </h2>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-
-            <div>
-                <label className="text-sm text-gray-500">Start date</label>
-                <input
-                type="date"
-                name="startDate"
-                value={form.startDate}
-                onChange={handleChange}
-                className="w-full border rounded-lg p-3 mt-1"
-                />
-            </div>
-
-            <div>
-                <label className="text-sm text-gray-500">End date</label>
-                <input
-                type="date"
-                name="endDate"
-                value={form.endDate}
-                onChange={handleChange}
-                className="w-full border rounded-lg p-3 mt-1"
-                />
-            </div>
-
-            <div>
-                <label className="text-sm text-gray-500">Notes</label>
-                <input
-                name="notes"
-                placeholder="e.g. mild cramps"
-                value={form.notes}
-                onChange={handleChange}
-                className="w-full border rounded-lg p-3 mt-1"
-                />
-            </div>
-
-            <button className="w-full bg-rose-500 text-white py-3 rounded-lg">
-                {editingId ? "Update period" : "Save period"}
-            </button>
-
-            </form>
-
-          </div>
-
-          {/* RIGHT SIDE → HISTORY */}
-            <div className="bg-white p-6 rounded-xl border">
-
-            <h2 className="text-lg font-semibold mb-4">
-              Period History
-            </h2>
-
-            {periods.length === 0 ? (
-              <p className="text-gray-400 text-center py-10">
-                Start tracking your first period 🩸
-              </p>
-            ) : (
-              periods.map((p) => (
-            <div
-                key={p._id}
-                className="border rounded-lg p-4 mb-3 flex justify-between items-center"
-            >
+                </div>
 
                 <div>
-                    <p className="text-gray-700">
-                        {formatDate(p.startDate)} → {formatDate(p.endDate)}
+
+                    <p className="text-gray-500 text-sm">
+                    Cycle Day
                     </p>
 
-                    {/* duration */}
-                    <p className="text-sm text-gray-400">
-                        {p.duration ? `${p.duration} days` : "-"}
+                    <h2 className="text-4xl font-bold text-pink-500 mt-1">
+                    {currentCycleDay || "N/A"}
+                    </h2>
+
+                    <p className="text-sm text-pink-400 mt-2">
+                    {phase}
                     </p>
 
-                    {/* notes */}
-                    {p.notes && (
-                        <p className="text-sm text-gray-500 mt-1 italic">
-                        {p.notes}
-                        </p>
-                    )}
-                </div>
-
-                <div className="flex gap-3 text-sm">
-                <button
-                    onClick={() => handleEdit(p)}
-                    className="text-yellow-500"
-                >
-                    edit
-                </button>
-
-                <button
-                    onClick={() => handleDelete(p._id)}
-                    className="text-red-500"
-                >
-                    del
-                </button>
                 </div>
 
             </div>
-            ))
-            )}
+
+          {/* AVG CYCLE */}
+            <div className="flex items-center gap-5">
+
+                <div className="w-20 h-20 rounded-full bg-purple-100 flex items-center justify-center">
+
+                    <IoReloadCircle className="text-purple-500 text-4xl" />
+
+                </div>
+
+            <div>
+
+                <p className="text-gray-500 text-sm">
+                Average Cycle
+                </p>
+
+                <h2 className="text-4xl font-bold text-purple-500 mt-1">
+                {averageCycle}
+                </h2>
+
+                <p className="text-sm text-gray-500 mt-2">
+                days
+                </p>
+
+            </div>
+
+            </div>
+
+          {/* NEXT PERIOD */}
+            <div className="flex items-center gap-5">
+
+                <div className="w-20 h-20 rounded-full bg-orange-100 flex items-center justify-center">
+
+                    <FaCalendarAlt className="text-orange-500 text-3xl" />
+
+                </div>
+
+                <div>
+
+                    <p className="text-gray-500 text-sm">
+                    Next Period
+                    </p>
+
+                    <h2 className="text-3xl font-bold text-orange-500 mt-1">
+                    {nextPeriodDate}
+                    </h2>
+
+                </div>
+
+            </div>
+        </div>
+
+        {/* FORM */}
+        <div className="bg-white rounded-2xl shadow-sm p-6 mb-8">
+
+          <h2 className="text-2xl font-semibold text-gray-800 mb-5">
+
+            {editingId
+              ? "Update Period"
+              : "Add Period"}
+
+          </h2>
+
+          <form
+            onSubmit={handleSubmit}
+            className="grid md:grid-cols-4 gap-4"
+          >
+
+            <input
+              type="date"
+              name="startDate"
+              value={form.startDate}
+              onChange={handleChange}
+              required
+              className="border p-3 rounded-xl"
+            />
+
+            <input
+              type="date"
+              name="endDate"
+              value={form.endDate}
+              onChange={handleChange}
+              required
+              className="border p-3 rounded-xl"
+            />
+
+            <input
+              type="text"
+              name="notes"
+              placeholder="Notes"
+              value={form.notes}
+              onChange={handleChange}
+              className="border p-3 rounded-xl"
+            />
+
+            <button className="bg-rose-500 hover:bg-rose-600 text-white rounded-xl p-3 transition">
+
+              {editingId ? "Update" : "Add"}
+
+            </button>
+
+          </form>
+
+        </div>
+
+        {/* HISTORY */}
+        <div>
+
+          <h2 className="text-2xl font-semibold text-gray-800 mb-5">
+
+            Period History
+
+          </h2>
+
+          <div className="space-y-4">
+
+            {periods.map((p) => (
+
+              <div
+                key={p._id}
+                className="bg-white rounded-2xl shadow-sm p-5 flex justify-between items-start"
+              >
+
+                <div>
+
+                  <p className="font-medium text-gray-800">
+
+                    {formatDate(p.startDate)}
+                    {" "}→{" "}
+                    {formatDate(p.endDate)}
+
+                  </p>
+
+                  <p className="text-sm text-gray-500 mt-1">
+
+                    {p.duration
+                      ? `${p.duration} days`
+                      : "—"}
+
+                  </p>
+
+                  {p.notes && (
+
+                    <p className="text-sm italic text-gray-500 mt-2">
+
+                      {p.notes}
+
+                    </p>
+
+                  )}
+
+                </div>
+
+                <div className="flex gap-4">
+
+                  <button
+                    onClick={() => handleEdit(p)}
+                    className="text-blue-500"
+                  >
+                    Edit
+                  </button>
+
+                  <button
+                    onClick={() => handleDelete(p._id)}
+                    className="text-red-500"
+                  >
+                    Delete
+                  </button>
+
+                </div>
+
+              </div>
+
+            ))}
 
           </div>
 
         </div>
 
       </div>
+
     </div>
   );
 };

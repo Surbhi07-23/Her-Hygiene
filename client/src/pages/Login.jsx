@@ -17,6 +17,8 @@ const Login = () => {
         })
     }
 
+    const [error, setError] = useState("");
+
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -29,9 +31,14 @@ const Login = () => {
             localStorage.setItem("email", res.data.user.email);
             localStorage.setItem("name", res.data.user.name);   //added  these 2 lines for hover profile tooltip
             navigate("/dashboard");                           //On success, redirects the user to the /dashboard route automatically.
-        } catch(error){
-            console.log(error.response.data);
-            alert("Invalid credentials!")
+        } catch (err) {
+
+            console.log(err);
+
+            setError(
+                err.response?.data?.message ||
+                "Incorrect password. Please try again."
+            );
         }
     }
 
@@ -46,6 +53,12 @@ const Login = () => {
             <h2 className="text-2xl font-bold mb-4 text-center">
                 Login
             </h2>
+
+            {error && (
+                <div className="bg-pink-100 border border-pink-200 text-rose-600 rounded-2xl p-4 mb-5 text-center font-medium">
+                    ⚠️ {error}
+                </div>
+            )}
 
             <input
                 name="email"
