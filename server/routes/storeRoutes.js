@@ -1,5 +1,4 @@
-const express = require("express");
-const fetch = require("node-fetch");
+import express from "express";
 
 const router = express.Router();
 
@@ -19,9 +18,11 @@ router.post("/", async (req, res) => {
       "https://overpass-api.de/api/interpreter",
       {
         method: "POST",
+
         headers: {
           "Content-Type": "text/plain"
         },
+
         body: query
       }
     );
@@ -42,4 +43,4 @@ router.post("/", async (req, res) => {
 
 });
 
-module.exports = router;
+export default router;
