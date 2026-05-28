@@ -1,27 +1,40 @@
-const jwt = require("jsonwebtoken");
+import jwt from "jsonwebtoken";
 
-const auth = (req , res , next) => {         //auth : middleware
-    try{
-        
-        const authHeader = req.headers.authorization;   //Authorization: Bearer abc123xyzTOKEN      ,    authHeader = "Bearer abc123xyzTOKEN"
+const auth = (req, res, next) => {
 
-        if(!authHeader){
-            return res.status(401).json({
-                message : "No Token. Access Denied"
-            })
-        }
+  try {
 
-        const token = authHeader.split(" ")[1];   //[0] = "Bearer"   [1] = "abc123xyzTOKEN" --> token
-        
-        const verified = jwt.verify(token , process.env.JWT_SECRET);  //verify:  1)Checks token signature  2)Checks expiration   3)Decodes payload
-        //now if token is valid , "verified" has payload
-        
-        req.user = verified;   //here we are creating a new property in req object called user which will have payload  .. So next middleware or route can access logged-in user by using req.user.name etc
-        next();
+    const authHeader =
+      req.headers.authorization;
+
+    if (!authHeader) {
+
+      return res.status(401).json({
+        message: "No Token. Access Denied"
+      });
+
     }
-    catch(error){
-        res.status(401).json("Invalid token");
-    }
-}
 
-module.exports = auth;
+    const token =
+      authHeader.split(" ")[1];
+
+    const verified = jwt.verify(
+      token,
+      process.env.JWT_SECRET
+    );
+
+    req.user = verified;
+
+    next();
+
+  } catch (error) {
+
+    res.status(401).json({
+      message: "Invalid token"
+    });
+
+  }
+
+};
+
+export default auth;

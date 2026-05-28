@@ -1,37 +1,82 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
-const periodSchema = new mongoose.Schema({
-    userId : {                                                //links period to a user
-        type : mongoose.Schema.Types.ObjectId,                //MOngoDB ID
-        ref : "User",                                         //references User model .. just like foreign key ..will use _id from User model
-        required : true                                       //userId must exist
+const periodSchema = new mongoose.Schema(
+
+  {
+
+    userId: {
+
+      type: mongoose.Schema.Types.ObjectId,
+
+      ref: "User",
+
+      required: true
+
     },
-    startDate : {
-        type : Date,
-        required : true
+
+    startDate: {
+
+      type: Date,
+
+      required: true
+
     },
-    endDate : {
-        type : Date,
-        required :true
+
+    endDate: {
+
+      type: Date,
+
+      required: true
+
     },
-    flow : {
-        type : String ,
-        enum : ["light" , "medium" , "heavy"],
-        default : "medium"
-    } ,
-    symptoms : {
-        type : [String],                                      //symptoms = ["cramps", "bloating", "headache"]   list of strings
-        default : [ ]
+
+    flow: {
+
+      type: String,
+
+      enum: [
+        "light",
+        "medium",
+        "heavy"
+      ],
+
+      default: "medium"
+
     },
-    notes : {
-        type : String ,
-        default : ""                                         //notes = "Heavy flow on day 2"   only one value
+
+    symptoms: {
+
+      type: [String],
+
+      default: []
+
     },
-    duration :{
-        type : "Number"
+
+    notes: {
+
+      type: String,
+
+      default: ""
+
+    },
+
+    duration: {
+
+      type: Number
+
     }
-},
-    {timestamps : true}
+
+  },
+
+  {
+
+    timestamps: true
+
+  }
+
 );
 
-module.exports = mongoose.model("Period" , periodSchema);     //creates model "Period" and collection becomes "periods"
+export default mongoose.model(
+  "Period",
+  periodSchema
+);
