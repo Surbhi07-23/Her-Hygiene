@@ -8,9 +8,12 @@ router.post("/", async (req, res) => {
 
     const { lat, lon } = req.body;
 
+    console.log(lat, lon);
+
     const query = `
       [out:json];
-      node["amenity"="pharmacy"](around:5000, ${lat}, ${lon});
+      node["amenity"="pharmacy"]
+      (around:5000,${lat},${lon});
       out;
     `;
 
@@ -20,14 +23,25 @@ router.post("/", async (req, res) => {
         method: "POST",
 
         headers: {
-          "Content-Type": "text/plain"
+
+          "Content-Type": "text/plain",
+
+          "User-Agent": "HerHygieneApp"
+
         },
 
         body: query
+
       }
     );
 
-    const data = await response.json();
+    console.log(response.status);
+
+    const text = await response.text();
+
+    console.log(text);
+
+    const data = JSON.parse(text);
 
     res.json(data);
 
@@ -36,7 +50,9 @@ router.post("/", async (req, res) => {
     console.log(err);
 
     res.status(500).json({
-      message: "Failed to fetch stores"
+
+      message: err.message
+
     });
 
   }
