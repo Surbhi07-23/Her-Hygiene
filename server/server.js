@@ -4,6 +4,8 @@ const dotenv = require("dotenv");
 const connectDB =  require("./config/db.js");
 const auth = require("./middleware/auth.js");
 
+import storeRoutes from "./routes/storeRoutes.js";
+
 dotenv.config();
 connectDB();
 
@@ -22,6 +24,7 @@ app.get("/api/protected" , auth , (req,res) => {
         user : req.user
     });
 });
+app.use("/api/stores", storeRoutes);
 
 app.use("/api/period" , require("./routes/period.js"));
 
