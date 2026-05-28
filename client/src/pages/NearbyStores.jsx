@@ -7,66 +7,77 @@ const NearbyStores = () => {
 
   const getStores = () => {
 
-    if (!navigator.geolocation) {
-      alert("Geolocation is not supported");
-      return;
-    }
+  if (!navigator.geolocation) {
 
-    setLoading(true);
+    alert("Geolocation not supported");
+    return;
+  }
 
-    navigator.geolocation.getCurrentPosition(
+  setLoading(true);
 
-      async (position) => {
+  navigator.geolocation.getCurrentPosition(
 
-        try {
+    async (position) => {
 
-          const lat = position.coords.latitude;
-          const lon = position.coords.longitude;
+      try {
 
-          console.log(lat, lon);
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
 
-          // Overpass API Query
-          const query = `
-            [out:json];
-            node["amenity"="pharmacy"](around:5000, ${lat}, ${lon});
-            out;
-          `;
+        // OVERPASS QUERY
+        const query = `
+          [out:json];
+          node["amenity"="pharmacy"](around:5000, ${lat}, ${lon});
+          out;
+        `;
 
-          const res = await fetch(
-            "https://overpass-api.de/api/interpreter",
-            {
-              method: "POST",
-              body: query
-            }
-          );
+        const response = await fetch(
+          "https://overpass-api.de/api/interpreter",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "text/plain"
+            },
+            body: query
+          }
+        );
 
-          const data = await res.json();
-
-          console.log(data);
-
-          setStores(data.elements || []);
-
-        } catch (err) {
-
-          console.log(err);
-          alert("Failed to fetch nearby stores");
-
+        if (!response.ok) {
+          throw new Error("Failed request");
         }
 
-        setLoading(false);
-      },
+        const data = await response.json();
 
-      (error) => {
+        console.log(data);
+
+        setStores(data.elements || []);
+
+      } catch (error) {
 
         console.log(error);
 
-        alert("Please allow location access");
+        alert(
+          "Unable to fetch nearby stores right now."
+        );
 
-        setLoading(false);
       }
 
-    );
-  };
+      setLoading(false);
+
+    },
+
+    (error) => {
+
+      console.log(error);
+
+      alert("Please allow location access");
+
+      setLoading(false);
+
+    }
+
+  );
+};
 
   return (
 
