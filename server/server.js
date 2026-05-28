@@ -25,9 +25,9 @@ app.get("/api/protected" , auth , (req,res) => {
     });
 });
 
-app.use("/api/stores", storeRoutes);
-
 app.use("/api/period" , require("./routes/period.js"));
+
+app.use("/api/stores", storeRoutes);
 
 app.get("/" , (req,res) => {
     res.send("app is running"); 
