@@ -174,7 +174,7 @@ const Dashboard = () => {
         );
 
         nextPeriodDate =
-        lastPeriod.toLocaleDateString();
+        lastPeriod.toLocaleDateString('en-GB');
     }
 
   // ---------------- CURRENT CYCLE DAY ----------------
